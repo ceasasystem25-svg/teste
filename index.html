@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela de Preços Colmeia</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* Reset e Tipografia Premium */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f1f5f9; /* Fundo cinza azulado bem suave */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            color: #334155;
+        }
+
+        /* Botão Flutuante Modernizado */
+        .btn-exportar {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 28px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            font-size: 16px;
+            background: linear-gradient(135deg, #f59e0b, #ea580c); /* Gradiente Laranja/Mel */
+            box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3);
+            transition: all 0.3s ease;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-exportar:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 15px 25px rgba(234, 88, 12, 0.4); 
+        }
+        .btn-exportar:disabled { 
+            background: #cbd5e1; 
+            box-shadow: none; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
+
+        /* Container Principal do PDF */
+        #conteudo-pdf {
+            width: 100%;
+            max-width: 1000px; 
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: relative;
+            padding-bottom: 30px;
+        }
+
+        /* Banner de Topo Ajustado */
+        .banner-topo {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Cabeçalho Clean */
+        header {
+            background-color: #ffffff;
+            padding: 25px 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .titulo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .logo-empresa {
+            height: 65px;
+            width: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        header h1 {
+            color: #0f172a;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        /* Etiqueta de Data Moderna */
+        header p#data-atual { 
+            background-color: #f8fafc;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            display: inline-block;
+        }
+
+        /* Área da Tabela */
+        .tabela-container {
+            max-height: 55vh;
+            overflow-y: auto;
+            padding: 0 30px;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        /* Cabeçalho da tabela escuro e elegante */
+        th {
+            background-color: #0f172a; /* Slate Dark */
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+        th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+
+        td:nth-child(2) {
+            text-align: left;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        tbody tr:hover { background-color: #f8fafc; }
+        
+        /* Linhas de Oferta Premium */
+        .linha-oferta { background-color: #fffbeb !important; }
+        .linha-oferta td { color: #b45309; }
+        .linha-oferta td:nth-child(2) { color: #92400e; font-weight: 600; }
+        
+        /* Badge (Selo) de Oferta Estilizado */
+        .badge-oferta {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-left: 10px;
+            vertical-align: middle;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+        }
+
+        /* Scrollbar customizada e delicada */
+        .tabela-container::-webkit-scrollbar { width: 6px; }
+        .tabela-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .tabela-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .tabela-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <button class="btn-exportar" id="btn-pdf" onclick="gerarPDF()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="18"></line><line x1="15" y1="15" x2="12" y2="18"></line></svg>
+        Exportar PDF
+    </button>
+
+    <div id="conteudo-pdf">
+        
+        <img src="https://i.postimg.cc/HsK5Cgyz/Sem-titulo-1.png" alt="Banner Topo" class="banner-topo">
+
+        <header>
+            <div class="titulo-container">
+                <img src="https://i.postimg.cc/dJ8hpY81/logo.png" alt="Logo" class="logo-empresa">
+                <h1>Tabela de Preços Colmeia</h1>
+            </div>
+            <p id="data-atual">Atualizando data...</p>
+        </header>
+
+        <div class="tabela-container" id="area-rolagem">
+            <table id="tabela-precos">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Peso/Qtd</th>
+                        <th>CX/UND</th>
+                        <th>Preço/Emb.</th>
+                        <th>Preço Kg/Und</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" style="padding: 40px; color: #64748b;">⏳ Conectando ao banco de dados...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // O JavaScript foi mantido idêntico ao original para garantir o funcionamento
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwmzjYDJHOqdfzo1sxpsd3rppfptEHcsH997Tc2Ck-P6CQ2-KxOW3VFDDzfFOsI5KsL/exec';
+
+        const dataHoje = new Date().toLocaleDateString('pt-BR');
+        document.getElementById('data-atual').innerText = `Atualizado em: ${dataHoje}`;
+
+        async function carregarDados() {
+            try {
+                const resposta = await fetch(API_URL);
+                if (!resposta.ok) throw new Error('Falha na comunicação com o servidor.');
+                
+                const json = await resposta.json();
+                if(json.status === "sucesso") {
+                    montarTabela(json.dados);
+                } else {
+                    throw new Error('Erro ao processar os dados da planilha.');
+                }
+            } catch (erro) {
+                mostrarErro(erro);
+            }
+        }
+
+        function montarTabela(dados) {
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = ''; 
+
+            if (dados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">A planilha está vazia.</td></tr>';
+                return;
+            }
+
+            dados.forEach(linha => {
+                if (!linha[1] || linha[1].trim() === "") return; 
+
+                const situacao = linha[7] ? linha[7].toString().toUpperCase().trim() : "";
+                if (situacao === "NÃO" || situacao === "NAO" || situacao.includes("INDISPON")) return; 
+
+                const oferta = linha[6] ? linha[6].toString().toUpperCase().trim() : "";
+                const isOferta = (oferta === "SIM" || oferta === "S");
+
+                const tr = document.createElement('tr');
+                if (isOferta) tr.classList.add('linha-oferta');
+
+                for(let i = 0; i < 6; i++) {
+                    const td = document.createElement('td');
+                    if (i === 1 && isOferta) {
+                        td.innerHTML = `${linha[i]} <span class="badge-oferta">🔥 Oferta</span>`;
+                    } else {
+                        td.textContent = linha[i] || '-'; 
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function mostrarErro(erro) {
+            document.querySelector('tbody').innerHTML = `<tr><td colspan="6" style="color:#ef4444;">Erro ao carregar: ${erro.message}</td></tr>`;
+        }
+
+        function gerarPDF() {
+            const elemento = document.getElementById('conteudo-pdf');
+            const areaRolagem = document.getElementById('area-rolagem');
+            const btn = document.getElementById('btn-pdf');
+
+            btn.innerHTML = "⏳ Gerando PDF...";
+            btn.disabled = true;
+
+            areaRolagem.style.maxHeight = 'none';
+            areaRolagem.style.overflowY = 'visible';
+
+            const opcoes = {
+                margin:       [10, 5, 10, 5], 
+                filename:     `Tabela_Colmeia_${dataHoje.replace(/\//g, '-')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, 
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'] }
+            };
+
+            html2pdf().set(opcoes).from(elemento).save().then(() => {
+                areaRolagem.style.maxHeight = '55vh';
+                areaRolagem.style.overflowY = 'auto';
+                btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="18"></line><line x1="15" y1="15" x2="12" y2="18"></line></svg> Exportar PDF Completo`;
+                btn.disabled = false;
+            });
+        }
+
+        window.onload = carregarDados;
+    </script>
+</body>
+</html>
