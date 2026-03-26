@@ -56,16 +56,16 @@
             display: block;
         }
 
-        /* --- ESTILO DO CABEÇALHO --- */
+        /* --- NOVO ESTILO DO CABEÇALHO --- */
         header {
             position: sticky;
             top: 0;
             background-color: rgba(255, 255, 255, 0.98); 
-            padding: 20px 30px; 
-            display: flex; 
+            padding: 20px 30px; /* Mais espaço nas laterais */
+            display: flex; /* Flexbox para alinhar os itens */
             align-items: center;
-            justify-content: space-between; 
-            flex-wrap: wrap; 
+            justify-content: space-between; /* Título na esquerda, Data na direita */
+            flex-wrap: wrap; /* Em telas menores, a data cai para a linha de baixo */
             gap: 15px;
             border-bottom: 3px solid #eeeeee;
             z-index: 1000;
@@ -75,8 +75,7 @@
         .titulo-container {
             display: flex;
             align-items: center;
-            /* ALTERADO: Aumentei o gap de 18px para 35px para dar mais espaço */
-            gap: 35px; 
+            gap: 18px; 
         }
 
         .logo-empresa {
@@ -90,9 +89,10 @@
             font-size: 26px;
             margin: 0;
             font-weight: 800;
-            letter-spacing: -0.5px; 
+            letter-spacing: -0.5px; /* Deixa as letras um pouco mais juntas (moderno) */
         }
 
+        /* Efeito de Gradiente na palavra Colmeia */
         header h1 .destaque {
             background: linear-gradient(90deg, #ff9800, #e65c00);
             -webkit-background-clip: text;
@@ -101,6 +101,7 @@
             letter-spacing: 1px;
         }
 
+        /* Nova Data estilo "Pílula" (Badge) */
         header p#data-atual { 
             background-color: #f4f6f8;
             color: #5c6a79;
@@ -112,7 +113,7 @@
             margin: 0;
             display: inline-flex;
             align-items: center;
-            gap: 6px; 
+            gap: 6px; /* Espaço entre o ícone e o texto */
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
         }
 
@@ -198,3 +199,121 @@
         </header>
 
         <div class="tabela-container" id="area-rolagem">
+            <table id="tabela-precos">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Produto</th>
+                        <th>Peso/Qtd</th>
+                        <th>CX/UND</th>
+                        <th>Preço/Emb.</th>
+                        <th>Preço Kg/Und</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" style="padding: 30px;">Conectando ao banco de dados...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwmzjYDJHOqdfzo1sxpsd3rppfptEHcsH997Tc2Ck-P6CQ2-KxOW3VFDDzfFOsI5KsL/exec';
+
+        const dataHoje = new Date().toLocaleDateString('pt-BR');
+        // Data atualizada com ícone e formatação forte
+        document.getElementById('data-atual').innerHTML = `📅 Atualizado em: <strong>${dataHoje}</strong>`;
+
+        async function carregarDados() {
+            try {
+                const resposta = await fetch(API_URL);
+                if (!resposta.ok) throw new Error('Falha na comunicação com o servidor.');
+                
+                const json = await resposta.json();
+                if(json.status === "sucesso") {
+                    montarTabela(json.dados);
+                } else {
+                    throw new Error('Erro ao processar os dados da planilha.');
+                }
+            } catch (erro) {
+                mostrarErro(erro);
+            }
+        }
+
+        function montarTabela(dados) {
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = ''; 
+
+            if (dados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">A planilha está vazia.</td></tr>';
+                return;
+            }
+
+            dados.forEach(linha => {
+                if (!linha[1] || linha[1].trim() === "") return; 
+
+                const situacao = linha[7] ? linha[7].toString().toUpperCase().trim() : "";
+                if (situacao === "NÃO" || situacao === "NAO" || situacao.includes("INDISPON")) return; 
+
+                const oferta = linha[6] ? linha[6].toString().toUpperCase().trim() : "";
+                const isOferta = (oferta === "SIM" || oferta === "S");
+
+                const tr = document.createElement('tr');
+                if (isOferta) tr.classList.add('linha-oferta');
+
+                for(let i = 0; i < 6; i++) {
+                    const td = document.createElement('td');
+                    if (i === 1 && isOferta) {
+                        td.innerHTML = `${linha[i]} <span class="badge-oferta">🔥 Oferta</span>`;
+                    } else {
+                        td.textContent = linha[i] || '-'; 
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function mostrarErro(erro) {
+            document.querySelector('tbody').innerHTML = `<tr><td colspan="6" style="color:red;">Erro ao carregar: ${erro.message}</td></tr>`;
+        }
+
+        function gerarPDF() {
+            const elemento = document.getElementById('conteudo-pdf');
+            const areaRolagem = document.getElementById('area-rolagem');
+            const btn = document.getElementById('btn-pdf');
+
+            btn.innerText = "⏳ Gerando PDF...";
+            btn.disabled = true;
+
+            areaRolagem.style.maxHeight = 'none';
+            areaRolagem.style.overflowY = 'visible';
+            elemento.style.paddingBottom = '50px';
+
+            const opcoes = {
+                margin:       [10, 5, 15, 5], 
+                filename:     `Tabela_Colmeia_${dataHoje.replace(/\//g, '-')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, 
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'], avoid: 'tr' } 
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opcoes).from(elemento).save().then(() => {
+                    areaRolagem.style.maxHeight = '55vh';
+                    areaRolagem.style.overflowY = 'auto';
+                    elemento.style.paddingBottom = '20px';
+                    
+                    btn.innerText = "📄 Exportar PDF Completo";
+                    btn.disabled = false;
+                });
+            }, 300);
+        }
+
+        window.onload = carregarDados;
+    </script>
+</body>
+</html>
